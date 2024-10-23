@@ -513,9 +513,9 @@ class DarkWindow(QMainWindow):
             self.last_button.setEnabled(self.current_page < total_pages - 1)
         else:
             self.page_info_label.setText('')
-            if self.nav_layout.isVisible():
-                self.clear_layout(self.nav_layout)
-                self.nav_layout.setVisible(False)
+            #if self.nav_layout.isVisible():
+                #self.clear_layout(self.nav_layout)
+                #self.nav_layout.setVisible(False)
             # Always keep buttons visible but change their appearance
             self.first_button.setVisible(False)
             self.prev_button.setVisible(False)
