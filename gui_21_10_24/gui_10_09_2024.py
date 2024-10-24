@@ -35,7 +35,7 @@ class CheckableHeader(QHeaderView):
         self.table_widget = table_widget
         self.checkbox = QCheckBox(self)
         self.checkbox.setText("All")
-        self.checkbox.setStyleSheet("margin-left: 2px;")
+        self.checkbox.setStyleSheet("margin-left: 2px; text-align: center;")
         self.checkbox.stateChanged.connect(self.on_state_changed)
 
     def resizeEvent(self, event):
@@ -706,6 +706,10 @@ class DarkWindow(QMainWindow):
             self.file_label.setText(f'Selected File: {file_name}')
             #self.header = CheckableHeader(self.table_widget, self)
             #self.table_widget.setHorizontalHeader(self.header)
+            font = self.table_widget.horizontalHeader().checkbox.font()
+            font.setBold(False)
+            self.table_widget.horizontalHeader().checkbox.setFont(font)
+            self.table_widget.horizontalHeader().checkbox.setText(f"All")
             self.select_all_states = {}
             #self.checkbox_count_label.setText(f"No MAC Addresses are selected")
             self.update_table()
