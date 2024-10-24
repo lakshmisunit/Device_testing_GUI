@@ -306,6 +306,7 @@ class DarkWindow(QMainWindow):
         self.rows_per_page = gui_config.rows_in_page
         self.total_rows = 0
         self.select_all_states = {}
+        self.prev_pages = 0
         self.layout = QVBoxLayout(central_widget)
 
         '''self.upload_button = QPushButton('Upload File')
@@ -595,6 +596,13 @@ class DarkWindow(QMainWindow):
                 self.status_label.setText(f"Selected Topic for LED Test: {self.selected_topic}")
                 self.update_page_info()
                 self.update_table()
+                print(f"the total rows are {self.total_rows}")
+                total_pages = (self.total_rows + self.rows_per_page - 1) // self.rows_per_page
+                print(f"Total_pages before are {self.prev_pages} and now it is {total_pages}") 
+                if(total_pages < self.prev_pages):
+                    self.go_to_last_page() 
+                self.prev_pages = total_pages
+                
 
     def run_test(self):
         selected_rows = self.get_selected_rows()
@@ -705,15 +713,21 @@ class DarkWindow(QMainWindow):
             self.download_action.setVisible(True)
             self.run_test_action.setVisible(True)
             total_pages = (self.total_rows + self.rows_per_page - 1) // self.rows_per_page
+            print(f"Previous total pages are {self.prev_pages} and current total pages are {total_pages}")
             if(total_pages > 1):
                 self.first_button.setVisible(True)
                 self.prev_button.setVisible(True)
                 self.next_button.setVisible(True)
                 self.last_button.setVisible(True)
+            elif(total_pages<self.prev_pages):
+                self.go_to_last_page()
+            else:
+                self.go_to_first_page()
             self.status_label.setText('Upload done.')
             #self.setLayout(self.nav_layout)
             #self.table_widget.setVisible(True)
             self.upload_done = True
+            self.prev_pages = total_pages
             #self.checkbox_count_label.setVisible(True)
 
     def find_mac_address_column(self, sheet):
