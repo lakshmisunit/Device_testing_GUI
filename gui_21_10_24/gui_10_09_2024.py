@@ -325,7 +325,7 @@ class DarkWindow(QMainWindow):
         self.rows_per_page = gui_config.rows_in_page
         self.total_rows = 0
         self.select_all_states = {}
-        self.prev_pages = 0
+        self.prev_pages = 1
         self.layout = QVBoxLayout(central_widget)
 
         '''self.upload_button = QPushButton('Upload File')
@@ -620,6 +620,8 @@ class DarkWindow(QMainWindow):
                 print(f"Total_pages before are {self.prev_pages} and now it is {total_pages}") 
                 if(total_pages < self.prev_pages):
                     self.go_to_last_page() 
+                if(total_pages == 0):
+                    QMessageBox.warning(self, "No Valid Addresses", "No valid addresses are found in the given Excel sheet.")
                 self.prev_pages = total_pages
                 
 
@@ -737,15 +739,20 @@ class DarkWindow(QMainWindow):
             self.run_test_action.setVisible(True)
             total_pages = (self.total_rows + self.rows_per_page - 1) // self.rows_per_page
             print(f"Previous total pages are {self.prev_pages} and current total pages are {total_pages}")
-            if(total_pages > self.prev_pages):
+            if(total_pages == 1):
+                self.go_to_first_page()
+            elif(total_pages > self.prev_pages):
                 self.first_button.setVisible(True)
                 self.prev_button.setVisible(True)
                 self.next_button.setVisible(True)
                 self.last_button.setVisible(True)
+            elif(total_pages == 0):
+                QMessageBox.warning(self, "No Valid Addresses", "No valid addresses are found in the given Excel sheet.")
             elif(total_pages<self.prev_pages):
                 self.go_to_last_page()
             else:
                 self.go_to_first_page()
+            
             self.status_label.setText('Upload done.')
             #self.setLayout(self.nav_layout)
             #self.table_widget.setVisible(True)
