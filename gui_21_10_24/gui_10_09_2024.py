@@ -37,6 +37,7 @@ class CheckableHeader(QHeaderView):
         self.checkbox.setText("All")
         self.checkbox.setStyleSheet("margin-left: 2px; text-align: center;")
         self.checkbox.stateChanged.connect(self.on_state_changed)
+        self.checked_rows = set()
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -59,6 +60,24 @@ class CheckableHeader(QHeaderView):
             table_window.select_all_states[table_window.current_page] = is_checked
             table_window.select_all_checkboxes(is_checked)
             #self.checkbox.setText(f"{self.parent().window().selected_count} selected")
+
+    def update_checkbox_count(self):
+        table_window = self.parent().window()
+        self.selected_count = sum(1 for row_data in table_window.data if row_data[5])
+        font = self.checkbox.font()
+        font.setBold(self.selected_count > 0)
+        self.checkbox.setFont(font)
+        self.checkbox.setText(f"All ({self.selected_count} selected)")
+        if self.selected_count < table_window.rows_per_page:
+            self.checkbox.setChecked(False)
+        return self.selected_count
+    
+    def set_row_checked(self, row, checked):
+        if checked:
+            self.checked_rows.add(row)
+        else:
+            self.checked_rows.discard(row)
+        self.update_checkbox_count()
 
 
 class DurationInputDialog(QDialog):
@@ -718,7 +737,7 @@ class DarkWindow(QMainWindow):
             self.run_test_action.setVisible(True)
             total_pages = (self.total_rows + self.rows_per_page - 1) // self.rows_per_page
             print(f"Previous total pages are {self.prev_pages} and current total pages are {total_pages}")
-            if(total_pages > 1):
+            if(total_pages > self.prev_pages):
                 self.first_button.setVisible(True)
                 self.prev_button.setVisible(True)
                 self.next_button.setVisible(True)
@@ -1060,7 +1079,7 @@ class DarkWindow(QMainWindow):
                 checkbox = cell_widget.layout().itemAt(0).widget()
                 if checkbox:  # Ensure the checkbox widget exists
                     checkbox.setChecked(is_checked)'''
-    def select_all_checkboxes(self, is_checked):
+    '''/*important def select_all_checkboxes(self, is_checked):
         # Only operate within the current page's range
         start_row = self.current_page * self.rows_per_page
         end_row = min(start_row + self.rows_per_page, len(self.data))
@@ -1071,7 +1090,18 @@ class DarkWindow(QMainWindow):
                 checkbox = cell_widget.layout().itemAt(0).widget()
                 if checkbox:  # Ensure the checkbox widget exists
                     checkbox.setChecked(is_checked)
-        self.update_checkbox_count()
+        self.update_checkbox_count()'''
+    
+    def select_all_checkboxes(self, checked):
+        for row in range(0, self.rows_per_page):
+            print(f"checked")
+            item = self.table_widget.cellWidget(row, 0)
+            if item:
+                #checkbox = item.findChild(QCheckBox)
+                checkbox = item.layout().itemAt(0).widget()
+                if checkbox:
+                    checkbox.setCheckState(Qt.Checked if checked else Qt.Unchecked)
+                    self.checkable_header.set_row_checked(row, checked)
 
 
     def highlight_row(self, row_index):
