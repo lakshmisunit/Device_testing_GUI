@@ -7,7 +7,7 @@ import threading
 from openpyxl import load_workbook, Workbook
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QWidget, QLabel, QPushButton, QAction, QMenu, QComboBox, QToolBar,
-    QTableWidget, QSpacerItem, QTableWidgetItem, QDialog, QFileDialog, QCheckBox, QSizePolicy, QHeaderView, QHBoxLayout, QSpinBox, QMessageBox, QDialogButtonBox
+    QTableWidget, QSpacerItem, QTableWidgetItem, QDialog, QFrame, QFileDialog, QCheckBox, QSizePolicy, QHeaderView, QHBoxLayout, QSpinBox, QMessageBox, QDialogButtonBox
 )
 from PyQt5.QtGui import QPalette, QColor, QFont, QBrush, QIcon
 from PyQt5.QtCore import Qt, pyqtSignal, QThread, QSize, QEvent, QObject, QRect
@@ -38,6 +38,7 @@ class CheckableHeader(QHeaderView):
         self.checkbox.setStyleSheet("margin-left: 2px; text-align: center;")
         self.checkbox.stateChanged.connect(self.on_state_changed)
         self.checked_rows = set()
+        self.select_all_checkbox_triggered = False
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -51,31 +52,61 @@ class CheckableHeader(QHeaderView):
         self.checkbox.setGeometry(QRect(x, y, checkbox_width, checkbox_height))
 
     def on_state_changed(self, state):
+        self.select_all_checkbox_triggered = True
         is_checked = (state == Qt.Checked)
         print("checked")
         table_window = self.parent().window()
         #self.checkbox.setText(f"{self.parent().window().selected_count} selected")
         print(f"table_window is {table_window}\n")
         if table_window:
-            table_window.select_all_states[table_window.current_page] = is_checked
-            table_window.select_all_checkboxes(is_checked)
+            if(table_window.select_all_checkbox_triggered):
+                table_window.select_all_states[table_window.current_page] = is_checked
+                table_window.select_all_checkboxes(is_checked)
+            print(state)
+            if(self.select_all_checkbox_triggered) and is_checked is True:
+                table_window.select_all_states[table_window.current_page] = is_checked
+                table_window.select_all_checkboxes(is_checked)
+                self.select_all_checkbox_triggered = False
+
             #self.checkbox.setText(f"{self.parent().window().selected_count} selected")
 
     def update_checkbox_count(self):
+        print("enetered updating for header checkbox")
         table_window = self.parent().window()
+        print(table_window.data)
         self.selected_count = sum(1 for row_data in table_window.data if row_data[5])
+        print(f"count of selection is : {self.selected_count}")
         font = self.checkbox.font()
         font.setBold(self.selected_count > 0)
         self.checkbox.setFont(font)
         self.checkbox.setText(f"All ({self.selected_count} selected)")
-        if self.selected_count < table_window.rows_per_page:
+        total_rows = len(table_window.data)
+        print(total_rows)
+        start_row = table_window.current_page * table_window.rows_per_page
+        print(start_row)
+        end_row = min(start_row + table_window.rows_per_page, total_rows)
+        #print(f"length of self.data is {len(self.data)}")
+        #end_row = (self.current_page + 1) * self.rows_per_page
+        print(end_row)
+        self.rows_in_a_page = end_row - start_row
+        print(self.rows_in_a_page)
+        print(f"current no of rows in page is {table_window.rows_in_a_page}")
+        if self.selected_count < self.rows_in_a_page:
+            #self.select_all_checkbox_triggered = False
+            print(f"Selected count is {self.selected_count} and rows_in_page is {table_window.rows_in_a_page}")
             self.checkbox.setChecked(False)
+        elif self.selected_count == self.rows_in_a_page:
+            #self.select_all_checkbox_triggered = True
+            print(f"Selected count is {self.selected_count} and rows_in_page is {table_window.rows_in_a_page}")
+            self.checkbox.setChecked(True)
         return self.selected_count
     
     def set_row_checked(self, row, checked):
         if checked:
+            print("added")
             self.checked_rows.add(row)
         else:
+            print("discarded")
             self.checked_rows.discard(row)
         self.update_checkbox_count()
 
@@ -176,7 +207,7 @@ class CountInputDialog(QDialog):
                 return True
         return super().eventFilter(obj, event)
 
-class TopicSelectionDialog(QDialog):
+'''class TopicSelectionDialog(QDialog):
     def __init__(self, parent = None):
         super(TopicSelectionDialog, self).__init__(parent)
         self.setWindowTitle("Settings")
@@ -200,12 +231,12 @@ class TopicSelectionDialog(QDialog):
         self.rows_spin_box.setRange(1, 100)
         self.rows_spin_box.setValue(self.parent().window().rows_per_page)
         self.rows_spin_box.setMinimumWidth(100)  # Increase the width of the spin box
-        self.layout.addWidget(self.rows_spin_box)
+        self.layout.addWidget(self.rows_spin_box)'''
 
-        '''self.ok_button = QPushButton("OK")
+'''self.ok_button = QPushButton("OK")
         self.ok_button.clicked.connect(self.accept)
         self.layout.addWidget(self.ok_button)'''
-        self.button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self)
+'''self.button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self)
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
         self.layout.addWidget(self.button_box)
@@ -227,7 +258,144 @@ class TopicSelectionDialog(QDialog):
             else:
                 event.ignore()
                 return True
+        return super().eventFilter(obj, event)'''
+
+class TopicSelectionDialog(QDialog):
+    def __init__(self, parent=None):
+        super(TopicSelectionDialog, self).__init__(parent)
+        self.setWindowTitle(" ")
+        self.setFixedSize(600, 300)
+        self.setStyleSheet("background-color: lightgrey;")
+ 
+        # Custom Title Bar
+        title_bar = QWidget(self)
+        title_layout = QHBoxLayout()
+        title_label = QLabel("Settings", self)
+        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setStyleSheet("font-size: 18px; font-weight: bold;")
+        title_layout.addWidget(title_label)
+ 
+        title_layout.setContentsMargins(0, 5, 0, 10)  # Reduced top margin
+        title_bar.setLayout(title_layout)
+ 
+        self.layout = QVBoxLayout()
+        self.layout.addWidget(title_bar)
+ 
+        # Page Parameters
+        self.rows_layout = QHBoxLayout()
+        self.rows_label = QLabel("Page Size:", self)
+        self.rows_label.setStyleSheet("font-size: 18px;")
+        self.rows_layout.addWidget(self.rows_label)
+ 
+        self.rows_spin_box = QSpinBox(self)
+        self.rows_spin_box.setRange(1, 100)
+        self.rows_spin_box.setValue(self.parent().window().rows_per_page)  # Default value
+        self.rows_spin_box.setMinimumWidth(120)
+        self.rows_spin_box.setAlignment(Qt.AlignCenter)  # Center-align the text
+        self.rows_spin_box.setStyleSheet("height: 30px; border: 2px solid black; font-size: 13px;")
+        self.rows_layout.addWidget(self.rows_spin_box)
+        self.layout.addLayout(self.rows_layout)
+ 
+        # Divider Line
+        self.divider_line = QFrame(self)
+        self.divider_line.setFrameShape(QFrame.HLine)
+        self.divider_line.setFrameShadow(QFrame.Sunken)
+        self.divider_line.setStyleSheet("color: grey;")
+        self.divider_line.setFixedHeight(2)
+        self.layout.addWidget(self.divider_line)
+ 
+        # LED Glow Test Settings Title
+        self.test_settings_label = QLabel("LED Glow Test Settings", self)
+        self.test_settings_label.setAlignment(Qt.AlignCenter)
+        self.test_settings_label.setStyleSheet("font-size: 18px; font-weight: bold;")
+        self.layout.addWidget(self.test_settings_label)
+ 
+        # Run Test Parameters
+        self.topic_layout = QHBoxLayout()
+        self.topic_label = QLabel("Topic Name:", self)
+        self.topic_label.setStyleSheet("font-size: 18px;")
+        self.topic_layout.addWidget(self.topic_label)
+ 
+        self.topic_combo = QComboBox()
+        self.topic_combo.setEditable(True)
+        self.topic_combo.lineEdit().setAlignment(Qt.AlignCenter)
+        self.topic_combo.addItems(gui_config.Topic_Names)  # Example topics
+        self.topic_combo.setCurrentText(self.parent().window().selected_topic)
+        self.topic_combo.setMinimumWidth(200)  # Increased width
+        #self.topic_combo.setAlignment(Qt.AlignCenter)
+        self.topic_combo.setStyleSheet("height: 30px; border: 2px solid black; font-size: 13px; text-align: center;")
+        self.topic_layout.addWidget(self.topic_combo)
+        self.layout.addLayout(self.topic_layout)
+ 
+        # Blink Duration
+        self.blink_duration_layout = QHBoxLayout()
+        self.blink_duration_label = QLabel("LED Blink Duration (seconds):", self)
+        self.blink_duration_label.setStyleSheet("font-size: 18px;")
+        self.blink_duration_layout.addWidget(self.blink_duration_label)
+ 
+        self.blink_duration_spin_box = QSpinBox(self)
+        self.blink_duration_spin_box.setRange(1, 60)
+        self.blink_duration_spin_box.setValue(self.parent().window().duration)  # Default value
+        self.blink_duration_spin_box.setMinimumWidth(120)
+        self.blink_duration_spin_box.setAlignment(Qt.AlignCenter)
+        self.blink_duration_spin_box.setStyleSheet("height: 30px; border: 2px solid black; font-size: 13px;")
+        self.blink_duration_layout.addWidget(self.blink_duration_spin_box)
+        self.layout.addLayout(self.blink_duration_layout)
+ 
+        # Blink Count
+        self.blink_count_layout = QHBoxLayout()
+        self.blink_count_label = QLabel("LED Blink Count:", self)
+        self.blink_count_label.setStyleSheet("font-size: 18px;")
+        self.blink_count_layout.addWidget(self.blink_count_label)
+ 
+        self.blink_count_spin_box = QSpinBox(self)
+        self.blink_count_spin_box.setRange(1, 100)
+        self.blink_count_spin_box.setValue(self.parent().window().count)  # Default value
+        self.blink_count_spin_box.setMinimumWidth(120)
+        self.blink_count_spin_box.setAlignment(Qt.AlignCenter)
+        self.blink_count_spin_box.setStyleSheet("height: 30px; border: 2px solid black; font-size: 13px;")
+        self.blink_count_layout.addWidget(self.blink_count_spin_box)
+        self.layout.addLayout(self.blink_count_layout)
+ 
+        # Adding spacing between labels and spin boxes
+        for layout in [self.rows_layout, self.topic_layout, self.blink_duration_layout, self.blink_count_layout]:
+            layout.setSpacing(30)  # Increased space between labels and spin boxes
+ 
+        # Button Box
+        self.button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self)
+        self.button_box.accepted.connect(self.accept)
+        self.button_box.rejected.connect(self.reject)
+        self.button_box.setCenterButtons(True)  # Center the buttons
+        self.layout.addWidget(self.button_box)
+ 
+        self.setLayout(self.layout)
+        self.installEventFilter(self)
+ 
+    def get_selected_topic(self):
+        return self.topic_combo.currentText()
+ 
+    def get_rows_per_page(self):
+        return self.rows_spin_box.value()
+   
+    def get_blink_duration(self):
+        return self.blink_duration_spin_box.value()
+ 
+    def get_blink_count(self):
+        return self.blink_count_spin_box.value()
+ 
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.Close:
+            reply = QMessageBox.question(self, "Close",
+                "The changes you made may get lost. Are you sure you want to exit?",
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if reply == QMessageBox.Yes:
+                return super().eventFilter(obj, event)
+            else:
+                event.ignore()
+                return True
         return super().eventFilter(obj, event)
+
+
 
 class ErrorDialog(QDialog):
     def __init__(self, parent=None):
@@ -326,6 +494,11 @@ class DarkWindow(QMainWindow):
         self.total_rows = 0
         self.select_all_states = {}
         self.prev_pages = 1
+        self.rows_in_a_page = 0
+        self.duration = gui_config.blink_duration
+        self.count = gui_config.blink_count
+
+        self.select_all_checkbox_triggered = False
         self.layout = QVBoxLayout(central_widget)
 
         '''self.upload_button = QPushButton('Upload File')
@@ -509,6 +682,8 @@ class DarkWindow(QMainWindow):
 
 
         self.selected_count = 0
+        print(f"selected devices count = {self.selected_topic}")
+        self.topic_dialog = TopicSelectionDialog(self)
         #self.checkbox_count_label = QLabel("Selected: 0")
         #layout.addWidget(self.checkbox_count_label)
         #self.checkbox_count_label.setVisible(False)
@@ -562,6 +737,7 @@ class DarkWindow(QMainWindow):
             self.last_button.setStyleSheet("opacity: 0.5;")
         else:
             self.last_button.setStyleSheet("")
+        
 
     def go_to_first_page(self):
         self.current_page = 0
@@ -611,6 +787,8 @@ class DarkWindow(QMainWindow):
         if dialog.exec_() == QDialog.Accepted:
             self.selected_topic = dialog.get_selected_topic()
             self.rows_per_page = dialog.get_rows_per_page()
+            self.duration = dialog.get_blink_duration()
+            self.count = dialog.get_blink_count()
             if(self.upload_done):
                 self.status_label.setText(f"Selected Topic for LED Test: {self.selected_topic}")
                 self.update_page_info()
@@ -625,7 +803,7 @@ class DarkWindow(QMainWindow):
                 self.prev_pages = total_pages
                 
 
-    def run_test(self):
+    '''def run_test(self):
         selected_rows = self.get_selected_rows()
         if not selected_rows:
             error_dialog = ErrorDialog(self)
@@ -636,7 +814,7 @@ class DarkWindow(QMainWindow):
         # Use the custom DurationInputDialog
         duration_dialog = DurationInputDialog(self)
         if duration_dialog.exec_() == QDialog.Accepted:
-            duration = duration_dialog.get_value()
+            duration =.get_value()
         else:
             return
 
@@ -646,13 +824,93 @@ class DarkWindow(QMainWindow):
             count = count_dialog.get_value()
         else:
             return
+        
+        duration = TopicSelectionDialog.get_blink_duration()
+        count = TopicSelectionDialog.get_blink_count()
 
         for row_index in selected_rows:
             mac_address = self.data[row_index][0]
             mac_address_without_colon = ''.join(mac_address.split(':'))
             payload = f"LG {duration},{count}"
             self.publish_message(mac_address, payload)
-        QApplication.processEvents()
+        QApplication.processEvents()'''
+    
+    def run_test(self):
+        selected_rows = self.get_selected_rows()
+        if not selected_rows:
+            error_dialog = ErrorDialog(self)
+            error_dialog.set_message("Please select at least one row.")
+            error_dialog.exec_()
+            return
+ 
+        # Open Topic Selection Dialog to get parameters
+        #topic_dialog = TopicSelectionDialog(self)
+        #if topic_dialog.exec_() != QDialog.Accepted:
+            #return  # User canceled the dialog
+ 
+        # Retrieve values from the dialog
+        #self.selected_topic = self.topic_dialog.get_selected_topic()
+        #self.duration = self.topic_dialog.get_blink_duration()
+        #self.count = self.topic_dialog.get_blink_count()
+ 
+        # Constructing the message
+        '''message = (
+            f"<b>Publishing LED glow test, '{self.selected_topic}' for the selected {self.selected_count} devices.</b><br>\n"
+            f"<b>Blink duration: {self.duration} seconds, Blink count: {self.count}</b><br>\n"
+            "Note: Go to settings to change any of the parameters."
+        )'''
+        self.selected_count = sum(1 for row_data in self.data if row_data[5])
+
+
+        message = (
+        f"<div style='text-align: center;'>"
+        f"<b>Publishing LED glow test, '{self.selected_topic}' for the selected {self.selected_count} devices.</b><br>"
+        f"<b>Blink duration: {self.duration} seconds, Blink count: {self.count}</b><br>"
+        "Note: Go to settings to change any of the parameters."
+        "</div>"
+    )
+ 
+        # Create a custom dialog for confirmation
+        custom_dialog = QDialog(self)
+        custom_dialog.setWindowTitle("Run Test")
+        custom_dialog.setFixedSize(550, 150)  # Adjust size as necessary
+ 
+        layout = QVBoxLayout()
+   
+        message_label = QLabel(message)
+        message_label.setWordWrap(True)
+        message_label.setStyleSheet("font-size: 15px")
+        layout.addWidget(message_label)
+ 
+        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, custom_dialog)
+        button_box.setCenterButtons(True)
+        layout.addWidget(button_box)
+ 
+        custom_dialog.setLayout(layout)
+ 
+        # Connect buttons
+        button_box.accepted.connect(custom_dialog.accept)
+        button_box.rejected.connect(custom_dialog.reject)
+ 
+        # Show the custom dialog
+        reply = custom_dialog.exec_()
+ 
+        print(f"selected devices count = {self.selected_count}")
+
+        if reply == QDialog.Accepted:
+            for row_index in selected_rows:
+                mac_address = self.data[row_index][0]
+                mac_address_without_colon = ''.join(mac_address.split(':'))
+                payload = f"LG {self.duration},{self.count}"
+                self.publish_message(mac_address, payload)
+            QApplication.processEvents()
+        else:
+            confirmation_reply = QMessageBox.question(self, "Confirm Exit", "Are you sure you want to quit running the test?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            #return  # User chose to cancel
+
+            if confirmation_reply == QMessageBox.Yes:
+                return 
+
         
 
     def get_selected_rows(self):
@@ -678,27 +936,48 @@ class DarkWindow(QMainWindow):
         data_found = False
         mac_address_lower = mac_address.lower()
     
+        # Check if 'LG' appears in the data
+        is_LG_data = any(part.strip().lower().startswith("lg") for part in data.split(','))
+        print(f"LG data is {is_LG_data}")
+
         for row_index, row_data in enumerate(self.data):
-            #print(f"row_data is {row_data[0]} and its lower is {row_data[0].lower()}, actual macc_address is {mac_address_lower}")
             if row_data[0] is not None and row_data[0].lower() == mac_address_lower:
                 data_found = True
                 self.update_checkbox(row_index, data)
-                #print(self.data[row_index])
-                if any(row_data[1:]):
+                print(data)
+
+                # Only move the row if the data does not contain "LG"
+                if any(row_data[1:]) and not is_LG_data:
+                    print("entering to pop")
                     row = self.data.pop(row_index)
                     self.data.insert(0, row)
                 break
 
         if not data_found:
+            print(data)
             new_row = [mac_address, False, False, False, False, False]
-            self.data.insert(0, new_row)
-            #self.data.append(new_row)
-            #print(data)
-            self.update_checkbox(0, data)
-            #self.update_checkbox(len(self.data) - 1, data) # for adding row at last
-            #print(self.data[0])
-    
+        
+            # Add the new row to the end if data is LG
+            if is_LG_data:
+                self.data.append(new_row)  # Append to the end for LG data
+            else:
+                print(f"before popping no of rows will be {len(self.data)}")
+                last_row = self.data.pop(len(self.data)-1)
+                print(f"After popping the last row, no of rows will be {len(self.data)}")
+                print(f"Last row is {last_row}")
+                print("pushed to first row")
+                self.data.insert(0, new_row)  # Push new row to the top
+                print(f"before adding the popped row to last, no of rows will be {len(self.data)}")
+                print("adding row to last")
+                self.data.append(last_row)
+                self.total_rows = len(self.data)
+                print(f"after adding the popped row to last no of rows will be {len(self.data)}")
+                #self.update_page_info()
+            self.update_page_info()
+            self.update_checkbox(len(self.data)-1 if is_LG_data else 0, data)
+
         self.update_table()
+
 
 
     def update_checkbox(self, row_index, data):
@@ -1036,20 +1315,46 @@ class DarkWindow(QMainWindow):
         #self.checkbox.setText(f"Select All ({self.selected_count} selected)")'''
 
     def update_checkbox_count(self):
+        print("i am inside")
         self.selected_count = sum(1 for row_data in self.data if row_data[5])
     
         # Create a QFont object
         font = self.table_widget.horizontalHeader().checkbox.font()
     
-        if self.selected_count > 0:
-            font.setBold(True)
-        else:
-            font.setBold(False)
-    
         # Apply the font to the checkbox
         self.table_widget.horizontalHeader().checkbox.setFont(font)
         self.table_widget.horizontalHeader().checkbox.setText(f"All ({self.selected_count} selected)")
-    
+        total_rows = len(self.data)
+        start_row = self.current_page * self.rows_per_page
+        end_row = min(start_row + self.rows_per_page, total_rows)
+        #print(f"length of self.data is {len(self.data)}")
+        #end_row = (self.current_page + 1) * self.rows_per_page
+        self.rows_in_a_page = end_row - start_row
+        print(f"Inside the main window selected count is {self.selected_count} and rows_in a page is {self.rows_in_a_page}")
+        if self.selected_count == self.rows_in_a_page:
+            font.setBold(True)
+            print(f"Flag before is {self.select_all_checkbox_triggered}")
+            self.select_all_checkbox_triggered = True
+            self.checkable_header.checkbox.setChecked(True)
+            print(f"Flag after is {self.select_all_checkbox_triggered}")
+            self.checkable_header.checkbox.setText(f"{self.selected_count} MAC Addresses are selected")
+            #self.select_all_checkbox_triggered = False
+        elif self.selected_count == 0:
+            font.setBold(True)
+            self.select_all_checkbox_triggered = True
+            self.checkable_header.checkbox.setChecked(False)
+            self.checkable_header.checkbox.setText(f"All")
+
+
+        else:
+            self.select_all_checkbox_triggered = False
+            print(f"Flag before WHILE UNCHECKING is {self.select_all_checkbox_triggered}")
+
+            self.checkable_header.checkbox.setChecked(False)
+            print(f"Flag AFTER is {self.select_all_checkbox_triggered}")
+
+            self.checkable_header.checkbox.setText(f"{self.selected_count} MAC Addresses are selected")
+            font.setBold(False)
         #self.checkbox_count_label.setText(f"{self.selected_count} MAC Addresses are selected")
         return self.selected_count
 
@@ -1100,8 +1405,10 @@ class DarkWindow(QMainWindow):
         self.update_checkbox_count()'''
     
     def select_all_checkboxes(self, checked):
+        self.select_all_checkbox_triggered = True  # Set the flag to indicate Select All is in action
         for row in range(0, self.rows_per_page):
-            print(f"checked")
+            print(f"the state is {checked}")
+            print(f"checked in select_all_chekbox")
             item = self.table_widget.cellWidget(row, 0)
             if item:
                 #checkbox = item.findChild(QCheckBox)
@@ -1109,7 +1416,7 @@ class DarkWindow(QMainWindow):
                 if checkbox:
                     checkbox.setCheckState(Qt.Checked if checked else Qt.Unchecked)
                     self.checkable_header.set_row_checked(row, checked)
-
+        self.update_checkbox_count()
 
     def highlight_row(self, row_index):
         first_column_checkbox = self.table_widget.cellWidget(row_index, 0).layout().itemAt(0).widget()
@@ -1129,7 +1436,17 @@ class DarkWindow(QMainWindow):
             self.setRowColor(row_index, QColor(100, 150, 200))
         else:
             self.resetRowColor(row_index)
-        self.update_checkbox_count()
+        print("sending to checkable_header")
+        print(f"the data in main window is {self.data}")
+
+        if not self.select_all_checkbox_triggered:
+            self.checkable_header.set_row_checked(row_index, state)
+        else:
+            self.update_checkbox_count()
+        #self.update_checkbox_count()
+        #self.checkable_header.set_row_checked(row_index, state)
+
+        #self.update_checkbox_count()
 
     def setRowColor(self, row, color):
         for col in range(self.table_widget.columnCount()):

@@ -4,6 +4,8 @@ HOME_PATH = os.path.expanduser("~")
 Topic_Names = ['LED_GLOW', 'LED_GLOW1', 'LED_GLOW2']
 Download_path = os.path.join(HOME_PATH, "Downloads")
 mac_address_in_page = 50
+blink_duration = 3
+blink_count = 2
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Device Tester')
