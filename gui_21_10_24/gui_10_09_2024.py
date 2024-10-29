@@ -947,7 +947,7 @@ class DarkWindow(QMainWindow):
                 print(data)
 
                 # Only move the row if the data does not contain "LG"
-                if any(row_data[1:]) and not is_LG_data:
+                if any(row_data[1:]):
                     print("entering to pop")
                     row = self.data.pop(row_index)
                     self.data.insert(0, row)
