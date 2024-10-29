@@ -292,7 +292,7 @@ class TopicSelectionDialog(QDialog):
         self.rows_spin_box.setValue(self.parent().window().rows_per_page)  # Default value
         self.rows_spin_box.setMinimumWidth(120)
         self.rows_spin_box.setAlignment(Qt.AlignCenter)  # Center-align the text
-        self.rows_spin_box.setStyleSheet("height: 30px; border: 2px solid black; font-size: 13px;")
+        self.rows_spin_box.setStyleSheet("height: 30px; border: 2px solid black; font-size: 18px;")
         self.rows_layout.addWidget(self.rows_spin_box)
         self.layout.addLayout(self.rows_layout)
  
@@ -323,7 +323,7 @@ class TopicSelectionDialog(QDialog):
         self.topic_combo.setCurrentText(self.parent().window().selected_topic)
         self.topic_combo.setMinimumWidth(200)  # Increased width
         #self.topic_combo.setAlignment(Qt.AlignCenter)
-        self.topic_combo.setStyleSheet("height: 30px; border: 2px solid black; font-size: 13px; text-align: center;")
+        self.topic_combo.setStyleSheet("height: 30px; border: 2px solid black; font-size: 18px; text-align: center;")
         self.topic_layout.addWidget(self.topic_combo)
         self.layout.addLayout(self.topic_layout)
  
@@ -338,7 +338,7 @@ class TopicSelectionDialog(QDialog):
         self.blink_duration_spin_box.setValue(self.parent().window().duration)  # Default value
         self.blink_duration_spin_box.setMinimumWidth(120)
         self.blink_duration_spin_box.setAlignment(Qt.AlignCenter)
-        self.blink_duration_spin_box.setStyleSheet("height: 30px; border: 2px solid black; font-size: 13px;")
+        self.blink_duration_spin_box.setStyleSheet("height: 30px; border: 2px solid black; font-size: 18px;")
         self.blink_duration_layout.addWidget(self.blink_duration_spin_box)
         self.layout.addLayout(self.blink_duration_layout)
  
@@ -353,7 +353,7 @@ class TopicSelectionDialog(QDialog):
         self.blink_count_spin_box.setValue(self.parent().window().count)  # Default value
         self.blink_count_spin_box.setMinimumWidth(120)
         self.blink_count_spin_box.setAlignment(Qt.AlignCenter)
-        self.blink_count_spin_box.setStyleSheet("height: 30px; border: 2px solid black; font-size: 13px;")
+        self.blink_count_spin_box.setStyleSheet("height: 30px; border: 2px solid black; font-size: 18px;")
         self.blink_count_layout.addWidget(self.blink_count_spin_box)
         self.layout.addLayout(self.blink_count_layout)
  
