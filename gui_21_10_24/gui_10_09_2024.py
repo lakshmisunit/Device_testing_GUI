@@ -63,28 +63,30 @@ class CheckableHeader(QHeaderView):
                 table_window.select_all_states[table_window.current_page] = is_checked
                 table_window.select_all_checkboxes(is_checked)
             print(state)
-            if(self.select_all_checkbox_triggered) and is_checked is True:
-                table_window.select_all_states[table_window.current_page] = is_checked
-                table_window.select_all_checkboxes(is_checked)
-                self.select_all_checkbox_triggered = False
+        if(self.select_all_checkbox_triggered) and is_checked is True:
+            table_window.select_all_states[table_window.current_page] = is_checked
+            table_window.select_all_checkboxes(is_checked)
+        self.select_all_checkbox_triggered = False
 
             #self.checkbox.setText(f"{self.parent().window().selected_count} selected")
 
     def update_checkbox_count(self):
         print("enetered updating for header checkbox")
         table_window = self.parent().window()
-        print(table_window.data)
-        self.selected_count = sum(1 for row_data in table_window.data if row_data[5])
+        total_rows = len(table_window.data)
+        start_row = table_window.current_page * table_window.rows_per_page
+        print(start_row)
+        end_row = min(start_row + table_window.rows_per_page, total_rows)
+        page_data = table_window.data[start_row:end_row]
+        print(page_data)
+        self.selected_count = sum(1 for row_data in page_data if row_data[5] and self.is_row_on_current_page(row_data))
         print(f"count of selection is : {self.selected_count}")
         font = self.checkbox.font()
         font.setBold(self.selected_count > 0)
         self.checkbox.setFont(font)
         self.checkbox.setText(f"All ({self.selected_count} selected)")
-        total_rows = len(table_window.data)
-        print(total_rows)
-        start_row = table_window.current_page * table_window.rows_per_page
-        print(start_row)
-        end_row = min(start_row + table_window.rows_per_page, total_rows)
+        
+        
         #print(f"length of self.data is {len(self.data)}")
         #end_row = (self.current_page + 1) * self.rows_per_page
         print(end_row)
@@ -110,6 +112,13 @@ class CheckableHeader(QHeaderView):
             self.checked_rows.discard(row)
         self.update_checkbox_count()
 
+    def is_row_on_current_page(self, row_data):
+        """ Helper method to determine if a row belongs to the current page based on its index. """
+        table_window = self.parent().window()
+        row_index = table_window.data.index(row_data)
+        start_row = table_window.current_page * table_window.rows_per_page
+        end_row = min(start_row + table_window.rows_per_page, len(table_window.data))
+        return start_row <= row_index < end_row
 
 class DurationInputDialog(QDialog):
     def __init__(self, parent=None):
@@ -1196,10 +1205,11 @@ class DarkWindow(QMainWindow):
         # Iterate over each row in self.data and poplate the table
         for row_index, row_data in enumerate(page_data):
             if len(row_data) >= 6:
-
                 # Creates and configure a checkbox for the first column
                 checkbox= QCheckBox()
                 checkbox.setChecked(row_data[5])
+                if(row_data[5]):
+                    self.handle_checkbox_change(row_index, Qt.Checked)
                 checkbox.stateChanged.connect(lambda state, idx=row_index + start_row: self.handle_checkbox_change(idx, state))
                 self.center_checkbox_in_cell(row_index, 0, checkbox)
 
@@ -1313,11 +1323,23 @@ class DarkWindow(QMainWindow):
         self.checkbox_count_label.setText(f"{self.selected_count} MAC Addresses are selected")
         return self.selected_count
         #self.checkbox.setText(f"Select All ({self.selected_count} selected)")'''
-
+    
+    def is_row_on_current_page(self, row_data):
+        """ Helper method to determine if a row belongs to the current page based on its index. """
+        row_index = self.data.index(row_data)
+        start_row = self.current_page * self.rows_per_page
+        end_row = min(start_row + self.rows_per_page, len(self.data))
+        return start_row <= row_index < end_row
+    
     def update_checkbox_count(self):
         print("i am inside")
-        self.selected_count = sum(1 for row_data in self.data if row_data[5])
-    
+        start_row = self.current_page * self.rows_per_page
+        end_row = (self.current_page + 1) * self.rows_per_page
+
+        #self.selected_count = sum(1 for row_data in self.data if row_data[5])
+        page_data = self.data[start_row: end_row]
+        self.selected_count = sum(1 for row_data in page_data if row_data[5] and self.is_row_on_current_page(row_data))
+
         # Create a QFont object
         font = self.table_widget.horizontalHeader().checkbox.font()
     
@@ -1436,8 +1458,8 @@ class DarkWindow(QMainWindow):
             self.setRowColor(row_index, QColor(100, 150, 200))
         else:
             self.resetRowColor(row_index)
-        print("sending to checkable_header")
-        print(f"the data in main window is {self.data}")
+        #print("sending to checkable_header")
+        #print(f"the data in main window is {self.data}")
 
         if not self.select_all_checkbox_triggered:
             self.checkable_header.set_row_checked(row_index, state)
