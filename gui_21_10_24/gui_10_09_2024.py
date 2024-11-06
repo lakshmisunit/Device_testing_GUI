@@ -84,7 +84,7 @@ class CheckableHeader(QHeaderView):
         font = self.checkbox.font()
         font.setBold(self.selected_count > 0)
         self.checkbox.setFont(font)
-        self.checkbox.setText(f"All ({self.selected_count} selected)")
+        #self.checkbox.setText(f"All ({self.selected_count} selected)")
         
         
         #print(f"length of self.data is {len(self.data)}")
@@ -93,14 +93,16 @@ class CheckableHeader(QHeaderView):
         self.rows_in_a_page = end_row - start_row
         print(self.rows_in_a_page)
         print(f"current no of rows in page is {table_window.rows_in_a_page}")
-        if self.selected_count < self.rows_in_a_page:
+        if self.selected_count != self.rows_in_a_page:
             #self.select_all_checkbox_triggered = False
             print(f"Selected count is {self.selected_count} and rows_in_page is {table_window.rows_in_a_page}")
+            self.checkbox.setText(f"All ({self.selected_count} selected)")
             self.checkbox.setChecked(False)
         elif self.selected_count == self.rows_in_a_page:
             #self.select_all_checkbox_triggered = True
             print(f"Selected count is {self.selected_count} and rows_in_page is {table_window.rows_in_a_page}")
             self.checkbox.setChecked(True)
+            self.checkbox.setText(f"All ({self.selected_count} selected)")
         return self.selected_count
     
     def set_row_checked(self, row, checked):
@@ -1281,7 +1283,6 @@ class DarkWindow(QMainWindow):
                 """)
                 self.center_checkbox_in_cell(row_index, 4, bootup_test)
 
-
                 led_glow_test = QCheckBox()
                 led_glow_test.setChecked(row_data[4])
                 led_glow_test.stateChanged.connect(lambda state, idx=row_index + start_row: self.handle_led_glow_test_change(idx, state))
@@ -1338,6 +1339,7 @@ class DarkWindow(QMainWindow):
 
         #self.selected_count = sum(1 for row_data in self.data if row_data[5])
         page_data = self.data[start_row: end_row]
+        print(page_data)
         self.selected_count = sum(1 for row_data in page_data if row_data[5] and self.is_row_on_current_page(row_data))
 
         # Create a QFont object
@@ -1345,7 +1347,7 @@ class DarkWindow(QMainWindow):
     
         # Apply the font to the checkbox
         self.table_widget.horizontalHeader().checkbox.setFont(font)
-        self.table_widget.horizontalHeader().checkbox.setText(f"All ({self.selected_count} selected)")
+        #self.table_widget.horizontalHeader().checkbox.setText(f"All ({self.selected_count} selected)")
         total_rows = len(self.data)
         start_row = self.current_page * self.rows_per_page
         end_row = min(start_row + self.rows_per_page, total_rows)
@@ -1366,9 +1368,10 @@ class DarkWindow(QMainWindow):
             self.select_all_checkbox_triggered = True
             self.checkable_header.checkbox.setChecked(False)
             self.checkable_header.checkbox.setText(f"All")
+            font.setBold(False)
 
 
-        else:
+        elif self.selected_count != self.rows_in_a_page:
             self.select_all_checkbox_triggered = False
             print(f"Flag before WHILE UNCHECKING is {self.select_all_checkbox_triggered}")
 
@@ -1385,6 +1388,7 @@ class DarkWindow(QMainWindow):
         if self.current_page > 0:
             self.current_page -= 1
             self.update_table()
+            self.update_checkbox_count()
             self.update_page_info()
 
     def load_next_page(self):
@@ -1392,6 +1396,7 @@ class DarkWindow(QMainWindow):
         if self.current_page < total_pages-1:
             self.current_page += 1
             self.update_table()
+            self.update_checkbox_count()
             self.update_page_info()
 
     
