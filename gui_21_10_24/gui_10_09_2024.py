@@ -787,7 +787,7 @@ class DarkWindow(QMainWindow):
             else:
                 print("Received message, but no devID found in payload")
 
-            print(f"mac_address = {mac_address}, data = {message.get('data')}")
+            #print(f"mac_address = {mac_address}, data = {message.get('data')}")
         except json.JSONDecodeError as e:
             print(f"Error decoding JSON: {e}")
         QApplication.processEvents()
@@ -1384,12 +1384,24 @@ class DarkWindow(QMainWindow):
         return self.selected_count
 
 
+    def update_highlights(self):
+        start_row = self.current_page * self.rows_per_page
+        end_row = (self.current_page + 1) * self.rows_per_page
+
+        #self.selected_count = sum(1 for row_data in self.data if row_data[5])
+        page_data = self.data[start_row: end_row]
+        for row_data in page_data:
+            if row_data[5] and self.is_row_on_current_page(row_data):
+                self.setRowColor(page_data.index(row_data), QColor(100, 150, 200))
+
     def load_previous_page(self):
         if self.current_page > 0:
             self.current_page -= 1
             self.update_table()
             self.update_checkbox_count()
             self.update_page_info()
+            self.update_highlights()
+
 
     def load_next_page(self):
         total_pages = (len(self.data) + self.rows_per_page - 1) // self.rows_per_page
@@ -1398,6 +1410,7 @@ class DarkWindow(QMainWindow):
             self.update_table()
             self.update_checkbox_count()
             self.update_page_info()
+            self.update_highlights()
 
     
     '''def select_all_checkboxes(self, is_checked):
@@ -1459,8 +1472,8 @@ class DarkWindow(QMainWindow):
 
     def handle_checkbox_change(self, row_index, state):
         self.data[row_index][5] = state == Qt.Checked
-        if (state == Qt.Checked):
-            self.setRowColor(row_index, QColor(100, 150, 200))
+        if (state == Qt.Checked) and self.is_row_on_current_page(self.data[row_index]):
+            self.setRowColor(row_index % self.rows_per_page, QColor(100, 150, 200))
         else:
             self.resetRowColor(row_index)
         #print("sending to checkable_header")
@@ -1477,7 +1490,13 @@ class DarkWindow(QMainWindow):
 
     def setRowColor(self, row, color):
         for col in range(self.table_widget.columnCount()):
+            computed_row = row%self.rows_per_page 
+            print(f"computed row is {computed_row}")
+
             item = self.table_widget.item(row % self.rows_per_page, col)
+            print(f"{col} has {item} but the column2 has this item {self.table_widget.item(2, col)}")
+            #computed_row = row % self.rows_per_page
+            print(f"using another variable column 2 has {self.table_widget.item(computed_row, col)}")
             if not item:
                 item = QTableWidgetItem()
                 self.table_widget.setItem(row % self.rows_per_page, col, item)
