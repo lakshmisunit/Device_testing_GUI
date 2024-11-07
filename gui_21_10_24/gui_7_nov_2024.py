@@ -437,6 +437,7 @@ class DarkWindow(QMainWindow):
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(0)
         self.progress_bar.setTextVisible(True)
+        self.progress_bar.setVisible(False)
         self.layout.addWidget(self.progress_bar)
 
         central_widget.setLayout(self.layout)
@@ -596,6 +597,7 @@ class DarkWindow(QMainWindow):
                 mqtt_handler = self.mqtt_handler
                 )
             self.test_worker.update_message.connect(self.on_test_update_message)
+            self.progress_bar.setVisible(True)
             self.test_worker.update_progress.connect(self.update_progress_bar)
             self.test_worker.finished.connect(self.on_test_finished)
             self.test_worker.start()
