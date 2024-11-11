@@ -867,6 +867,7 @@ class DarkWindow(QMainWindow):
             self.update_checkbox(len(self.data)-1 if is_LG_data else 0, data)'''
 
         self.update_table()
+        self.update_checkbox_count()
         self.update_highlights()
 
 
