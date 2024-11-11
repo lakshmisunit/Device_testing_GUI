@@ -565,7 +565,7 @@ class DarkWindow(QMainWindow):
         message = (
         f"<div style='text-align: center;'>"
         f"<b>Publishing LED glow test, '{self.selected_topic}' for the selected {self.selected_count} devices.</b><br>"
-        f"<b>Blink duration: {self.duration} seconds, Blink count: {self.selected_count}</b><br>"
+        f"<b>Blink duration: {self.duration} seconds, Blink count: {self.count}</b><br>"
         "Note: Go to settings to change any of the parameters."
         "</div>"
     )
