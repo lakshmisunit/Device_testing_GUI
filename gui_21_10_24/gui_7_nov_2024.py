@@ -334,7 +334,7 @@ class TestWorker(QThread):
         message = (
             f"<div style='text-align: center;'>"
             f"<b>Publishing LED glow test, '{self.selected_topic}' for the selected {self.selected_count} devices.</b><br>"
-            f"<b>Blink duration: {self.duration} seconds, Blink count: {self.count}</b><br>"
+            f"<b>Blink duration: {self.duration} seconds, Blink count: {self.total_count}</b><br>"
             "Note: Go to settings to change any of the parameters."
             "</div>"
         )
@@ -552,6 +552,8 @@ class DarkWindow(QMainWindow):
 
     def run_test_action_triggered(self):
         selected_rows = self.get_selected_rows()
+        self.selected_count = sum(1 for row_data in self.data if row_data[5])
+        print(f"selected_count is {self.selected_count}")
         if not selected_rows:
             error_dialog = QMessageBox(self)
             error_dialog.setIcon(QMessageBox.Warning)
@@ -563,7 +565,7 @@ class DarkWindow(QMainWindow):
         message = (
         f"<div style='text-align: center;'>"
         f"<b>Publishing LED glow test, '{self.selected_topic}' for the selected {self.selected_count} devices.</b><br>"
-        f"<b>Blink duration: {self.duration} seconds, Blink count: {self.count}</b><br>"
+        f"<b>Blink duration: {self.duration} seconds, Blink count: {self.selected_count}</b><br>"
         "Note: Go to settings to change any of the parameters."
         "</div>"
     )
