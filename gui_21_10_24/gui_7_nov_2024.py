@@ -663,6 +663,7 @@ class DarkWindow(QMainWindow):
     def go_to_first_page(self):
         self.current_page = 0
         self.update_table()
+        self.update_checkbox_count()
         self.update_page_info()
         self.update_highlights()
         #self.load_page_data()
@@ -671,6 +672,7 @@ class DarkWindow(QMainWindow):
         total_page = (self.total_rows + self.rows_per_page - 1) // self.rows_per_page
         self.current_page = total_page - 1
         self.update_table()
+        self.update_checkbox_count()
         self.update_page_info()
         self.update_highlights()
         #self.load_page_data()
@@ -724,6 +726,7 @@ class DarkWindow(QMainWindow):
                 if(total_pages == 0):
                     QMessageBox.warning(self, "No Valid Addresses", "No valid addresses are found in the given Excel sheet.")
                 self.prev_pages = total_pages
+                self.update_highlights()
                     
     def run_test(self):
         selected_rows = self.get_selected_rows()
@@ -776,7 +779,8 @@ class DarkWindow(QMainWindow):
                 mac_address_without_colon = ''.join(mac_address.split(':'))
                 payload = f"LG {self.duration},{self.count}"
                 self.publish_message(mac_address, payload)
-            QApplication.processEvents()
+            self.update_highlights()
+            #QApplication.processEvents()
         else:
             confirmation_reply = QMessageBox.question(self, "Confirm Exit", "Are you sure you want to quit running the test?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             #return  # User chose to cancel
