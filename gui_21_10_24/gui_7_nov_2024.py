@@ -915,10 +915,10 @@ class DarkWindow(QMainWindow):
             elif(total_pages == 0):
                 QMessageBox.warning(self, "No Valid Addresses", "No valid addresses are found in the given Excel sheet.")
             elif(total_pages<self.prev_pages):
-                self.go_to_last_page()
+                self.go_to_first_page()
             else:
                 self.go_to_first_page()
-            
+            self.progress_bar.setVisible(False)
             self.status_label.setText('Upload done.')
             self.upload_done = True
             self.prev_pages = total_pages
