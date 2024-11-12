@@ -754,7 +754,6 @@ class DarkWindow(QMainWindow):
         self.current_page = 0
         self.update_table()
         self.update_page_info()
-        self.update_highlights()
         #self.load_page_data()
 
     def go_to_last_page(self):
@@ -762,7 +761,6 @@ class DarkWindow(QMainWindow):
         self.current_page = total_page - 1
         self.update_table()
         self.update_page_info()
-        self.update_highlights()
         #self.load_page_data()
 
     def eventFilter(self, obj, event):
@@ -782,7 +780,7 @@ class DarkWindow(QMainWindow):
             message = json.loads(payload)
             dev_id = message.get('devID')
             print(f"dev_id is {dev_id}")
-            if dev_id:
+            if dev_id and self.upload_done:
                 #mac_address = ':'.join([dev_id[i:i + 2] for i in range(0, len(dev_id), 2)])
                 mac_address = dev_id
                 self.update_table_with_mqtt_data(mac_address, message.get('data'))
@@ -873,7 +871,6 @@ class DarkWindow(QMainWindow):
             "Note: Go to settings to change any of the parameters."
         )'''
         self.selected_count = sum(1 for row_data in self.data if row_data[5])
-        print(f"selected_count is {self.selected_count}")
 
 
         message = (
@@ -951,8 +948,8 @@ class DarkWindow(QMainWindow):
         mac_address_lower = mac_address.lower()
     
         # Check if 'LG' appears in the data
-        is_LG_data = any(part.strip().lower().startswith("lg") for part in data.split(','))
-        print(f"LG data is {is_LG_data}")
+        #is_LG_data = any(part.strip().lower().startswith("lg") for part in data.split(','))
+        #print(f"LG data is {is_LG_data}")
 
         for row_index, row_data in enumerate(self.data):
             if row_data[0] is not None and row_data[0].lower() == mac_address_lower:
@@ -970,9 +967,22 @@ class DarkWindow(QMainWindow):
         if not data_found:
             print(data)
             new_row = [mac_address, False, False, False, False, False]
-        
+            print(f"before popping no of rows will be {len(self.data)}")
+            last_row = self.data.pop(len(self.data)-1)
+            print(f"After popping the last row, no of rows will be {len(self.data)}")
+            print(f"Last row is {last_row}")
+            print("pushed to first row")
+            self.data.insert(0, new_row)  # Push new row to the top
+            print(f"before adding the popped row to last, no of rows will be {len(self.data)}")
+            print("adding row to last")
+            self.data.append(last_row)
+            self.total_rows = len(self.data)
+            print(f"after adding the popped row to last no of rows will be {len(self.data)}")
+                #self.update_page_info()
+            self.update_page_info()
+            self.update_checkbox(len(self.data)-1, data)
             # Add the new row to the end if data is LG
-            if is_LG_data:
+            '''if is_LG_data:
                 self.data.append(new_row)  # Append to the end for LG data
             else:
                 print(f"before popping no of rows will be {len(self.data)}")
@@ -988,7 +998,7 @@ class DarkWindow(QMainWindow):
                 print(f"after adding the popped row to last no of rows will be {len(self.data)}")
                 #self.update_page_info()
             self.update_page_info()
-            self.update_checkbox(len(self.data)-1 if is_LG_data else 0, data)
+            self.update_checkbox(len(self.data)-1 if is_LG_data else 0, data)'''
 
         self.update_table()
 
@@ -998,10 +1008,10 @@ class DarkWindow(QMainWindow):
         if data == 100:
             self.data[row_index][1] = True
             move_row = True
-        elif data == "BootUp":
+        if data == "BootUp":
             self.data[row_index][3] = True
             move_row = True
-        elif data == "SW":
+        if data == "SW":
             self.data[row_index][2] = True
             move_row = True
         #if move_row == True:
@@ -1213,6 +1223,8 @@ class DarkWindow(QMainWindow):
                 # Creates and configure a checkbox for the first column
                 checkbox= QCheckBox()
                 checkbox.setChecked(row_data[5])
+                if(row_data[5]):
+                    self.handle_checkbox_change(row_index, Qt.Checked)
                 checkbox.stateChanged.connect(lambda state, idx=row_index + start_row: self.handle_checkbox_change(idx, state))
                 self.center_checkbox_in_cell(row_index, 0, checkbox)
 
@@ -1391,9 +1403,8 @@ class DarkWindow(QMainWindow):
 
         #self.selected_count = sum(1 for row_data in self.data if row_data[5])
         page_data = self.data[start_row: end_row]
-        print(f"page_data is {page_data}")
         for row_data in page_data:
-            if row_data[5]: #and self.is_row_on_current_page(row_data):
+            if row_data[5] and self.is_row_on_current_page(row_data):
                 self.setRowColor(page_data.index(row_data), QColor(100, 150, 200))
 
     def load_previous_page(self):

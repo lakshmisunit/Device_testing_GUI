@@ -722,7 +722,7 @@ class DarkWindow(QMainWindow):
                 total_pages = (self.total_rows + self.rows_per_page - 1) // self.rows_per_page
                 print(f"Total_pages before are {self.prev_pages} and now it is {total_pages}") 
                 if(total_pages < self.prev_pages):
-                    self.go_to_last_page() 
+                    self.go_to_first_page() 
                 if(total_pages == 0):
                     QMessageBox.warning(self, "No Valid Addresses", "No valid addresses are found in the given Excel sheet.")
                 self.prev_pages = total_pages
@@ -835,9 +835,10 @@ class DarkWindow(QMainWindow):
             new_row = [mac_address, False, False, False, False, False]
         
             print(f"before popping no of rows will be {len(self.data)}")
+            #if self.data:
             last_row = self.data.pop(len(self.data)-1)
             print(f"After popping the last row, no of rows will be {len(self.data)}")
-            print(f"Last row is {last_row}")
+            #print(f"Last row is {last_row}")
             print("pushed to first row")
             self.data.insert(0, new_row)  # Push new row to the top
             print(f"before adding the popped row to last, no of rows will be {len(self.data)}")
@@ -890,6 +891,7 @@ class DarkWindow(QMainWindow):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
         file_name, _ = QFileDialog.getOpenFileName(self, "Open Excel File", "", "Excel Files (*.xlsx)", options=options)
+        self.upload_done = False
         if file_name:
             self.load_data(file_name)
             self.status_label.setText('Excel sheet is uploading. Please wait...')
